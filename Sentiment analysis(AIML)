@@ -1,0 +1,66 @@
+import pandas as pd
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from textblob import TextBlob
+import matplotlib.pyplot as plt
+import seaborn as sns
+from wordcloud import WordCloud
+
+# Download VADER lexicon if not already downloaded
+nltk.download('vader_lexicon')
+
+# Sample data
+data = {
+    'Text': [
+        "I love this product! It's amazing.",
+        "This is the worst experience I've had.",
+        "It's okay, nothing special.",
+        "Absolutely fantastic service!",
+        "Terrible. Will not recommend."
+    ]
+}
+df = pd.DataFrame(data)
+
+# Initialize VADER sentiment analyzer
+vader = SentimentIntensityAnalyzer()
+
+# Compute VADER sentiment scores
+df['VADER_Score'] = df['Text'].apply(lambda x: vader.polarity_scores(x)['compound'])
+
+# Compute TextBlob sentiment polarity
+df['TextBlob_Score'] = df['Text'].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+# Classify sentiment based on VADER compound score
+def classify_sentiment(score):
+    if score >= 0.05:
+        return 'Positive'
+    elif score <= -0.05:
+        return 'Negative'
+    else:
+        return 'Neutral'
+
+df['Sentiment'] = df['VADER_Score'].apply(classify_sentiment)
+
+# Display DataFrame
+print(df)
+
+# Plot sentiment distribution
+plt.figure(figsize=(6, 4))
+sns.set(style="whitegrid")
+sns.countplot(x='Sentiment', data=df, palette='Set2')
+plt.title("Sentiment Distribution")
+plt.xlabel("Sentiment Category")
+plt.ylabel("Number of Texts")
+plt.tight_layout()
+plt.show()
+
+# Generate and display word cloud
+text = " ".join(df['Text'])
+wordcloud = WordCloud(background_color="white", width=800, height=400).generate(text)
+
+plt.figure(figsize=(10, 5))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.title("Word Cloud of All Texts")
+plt.tight_layout()
+plt.show()
